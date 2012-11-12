@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<cache>
+  <entry host="map.eniro.com" ip="80.69.225.140"/>
+  <entry host="map01.eniro.com" ip="80.69.225.140"/>
+  <entry host="map02.eniro.com" ip="80.69.225.140" />
+  <entry host="map03.eniro.com" ip="80.69.225.140" />
+  <entry host="map04.eniro.com" ip="80.69.225.140" />
+  <entry host="rdswb04.adroot.net" ip="146.173.114.211" />
+  <entry host="rdswb01.adroot.net" ip="146.173.97.192" />
+  <entry host="rdsap11.adroot.net" ip="146.173.200.33" />
+</cache>
