@@ -3,22 +3,23 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
+using LogProxy.Lib.Streams;
 
-namespace LogProxy.Lib
+namespace LogProxy.Lib.Inspection
 {
     public class SoapActionSearchBuffer : IDisposable
     {
         private const string AddressingNamespace = "http://www.w3.org/2005/08/addressing";
         private const string ActionTagName = "Action";
 
-        public ContentStream stream;
+        public BlockingMemoryStream stream;
         private ManualResetEventSlim waitHandle;
         private volatile bool finished;
         private Stopwatch watch;
 
         public SoapActionSearchBuffer()
         {
-            this.stream = new ContentStream();
+            this.stream = new BlockingMemoryStream();
             this.waitHandle = new ManualResetEventSlim(false);
         }
 
@@ -69,7 +70,7 @@ namespace LogProxy.Lib
         {
             if (!this.finished)
             {
-                this.stream.AddContent(data, offset, count);
+                this.stream.Write(data, offset, count);
             }
         }
 

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
-namespace LogProxy.Lib
+namespace LogProxy.Lib.Http
 {
     public class HttpHeadersSummary
     {

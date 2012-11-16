@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Diagnostics;
-using System.Globalization;
-using System.IO;
 
-namespace LogProxy.Lib
+namespace LogProxy.Lib.Http
 {
     public class HttpMessage : IDisposable
     {

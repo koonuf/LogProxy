@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Sockets;
 using System.Security.Authentication;
-using System.Text;
+using LogProxy.Lib.Http;
 
 namespace LogProxy.Lib.Sockets
 {

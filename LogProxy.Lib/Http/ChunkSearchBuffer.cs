@@ -1,10 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
  
-namespace LogProxy.Lib
+namespace LogProxy.Lib.Http
 {
+    /// <summary>
+    /// Responsible for traversing and delimiting HTTP responsing, which are being transferred in 
+    /// chunked mode (chunked transfer encoding)
+    /// </summary>
     public class ChunkSearchBuffer
     {
         private const int FinalChunkLength = 1 + 2 + 2;
@@ -29,7 +31,6 @@ namespace LogProxy.Lib
         public ChunkSearchBuffer()
         {
             this.contentBuffer = new byte[contentBufferArraySize];
-            Console.WriteLine("chunked transfer");
         }
 
         public void AddContentData(byte[] data)

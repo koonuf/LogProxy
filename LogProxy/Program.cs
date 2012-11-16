@@ -2,6 +2,7 @@
 using System.Configuration;
 using LogProxy.Lib;
 using LogProxy.Lib.Logging;
+using LogProxy.Lib.Sockets;
 
 namespace LogProxy
 {

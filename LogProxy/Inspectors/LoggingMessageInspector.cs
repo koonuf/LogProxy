@@ -24,32 +24,26 @@ namespace LogProxy.Inspectors
 
         public void ClientReceiveStart()
         {
-            throw new System.NotImplementedException();
         }
 
         public void AddRequestData(byte[] data)
         {
-            throw new System.NotImplementedException();
         }
 
         public void AddResponseData(byte[] data)
         {
-            throw new System.NotImplementedException();
         }
 
-        public void RequestHeadersParsed(Lib.HttpHeadersSummary headers)
+        public void RequestHeadersParsed(Lib.Http.HttpHeadersSummary headers)
         {
-            throw new System.NotImplementedException();
         }
 
-        public void ResponseHeadersParsed(Lib.HttpHeadersSummary headers)
+        public void ResponseHeadersParsed(Lib.Http.HttpHeadersSummary headers)
         {
-            throw new System.NotImplementedException();
         }
 
         public void ServerReceiveFinished()
         {
-            throw new System.NotImplementedException();
         }
 
         private void InitLoggers()

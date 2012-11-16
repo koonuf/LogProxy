@@ -1,4 +1,6 @@
-﻿namespace LogProxy.Lib.Inspection
+﻿using LogProxy.Lib.Http;
+
+namespace LogProxy.Lib.Inspection
 {
     public interface IInspectorFactory
     {

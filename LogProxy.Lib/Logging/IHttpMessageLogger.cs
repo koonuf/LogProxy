@@ -1,4 +1,5 @@
 ﻿using System;
+using LogProxy.Lib.Http;
 
 namespace LogProxy.Lib.Logging
 {

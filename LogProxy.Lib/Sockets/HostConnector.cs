@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using LogProxy.Lib.Inspection;
-using LogProxy.Lib.Logging;
 
-namespace LogProxy.Lib
+namespace LogProxy.Lib.Sockets
 {
     public class HostConnector
     {

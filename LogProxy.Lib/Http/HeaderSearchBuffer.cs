@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace LogProxy.Lib
+namespace LogProxy.Lib.Http
 {
     internal class HeaderSearchBuffer
     {

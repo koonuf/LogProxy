@@ -2,24 +2,27 @@
 using System.IO;
 using System.Threading;
 
-namespace LogProxy.Lib
+namespace LogProxy.Lib.Streams
 {
-    public class ContentStream : Stream
+    /// <summary>
+    /// Memory stream that blocks on read until data is written or it's "finished".
+    /// </summary>
+    public class BlockingMemoryStream : Stream
     {
-        private byte[] buffer = new byte[1024 * 2];
+        private byte[] dataBuffer = new byte[1024 * 2];
         private int bufferSize;
         private ManualResetEvent waitHandle = new ManualResetEvent(false);
         private readonly object syncLock = new object();
         private volatile bool finished;
 
-        public void AddContent(byte[] data, int offset, int count)
+        public override void Write(byte[] buffer, int offset, int count)
         {
             if (count > 0 && !this.finished)
             {
                 lock (this.syncLock)
                 {
-                    Utils.EnsureArraySize(ref this.buffer, this.bufferSize + count, this.bufferSize);
-                    Buffer.BlockCopy(data, offset, this.buffer, this.bufferSize, count);
+                    Utils.EnsureArraySize(ref this.dataBuffer, this.bufferSize + count, this.bufferSize);
+                    Buffer.BlockCopy(buffer, offset, this.dataBuffer, this.bufferSize, count);
                     this.bufferSize += count;
                     this.waitHandle.Set();
                 }
@@ -46,7 +49,7 @@ namespace LogProxy.Lib
                     count = Math.Min(count, this.bufferSize - (int)this.Position);
                     if (count >= 0)
                     {
-                        Buffer.BlockCopy(this.buffer, (int)this.Position, buffer, offset, count);
+                        Buffer.BlockCopy(this.dataBuffer, (int)this.Position, buffer, offset, count);
                         this.Position += count;
                     }
                     else
@@ -72,7 +75,7 @@ namespace LogProxy.Lib
 
         public byte[] ToArray()
         {
-            return Utils.CopyArray(this.buffer, this.bufferSize);
+            return Utils.CopyArray(this.dataBuffer, this.bufferSize);
         }
 
         public override bool CanRead
@@ -87,7 +90,7 @@ namespace LogProxy.Lib
 
         public override bool CanWrite
         {
-            get { return false; }
+            get { return true; }
         }
 
         public override void Flush()
@@ -107,10 +110,6 @@ namespace LogProxy.Lib
         }
 
         public override void SetLength(long value)
-        {
-        }
-
-        public override void Write(byte[] buffer, int offset, int count)
         {
         }
     }

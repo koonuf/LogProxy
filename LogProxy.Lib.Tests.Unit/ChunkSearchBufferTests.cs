@@ -1,6 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text;
+using LogProxy.Lib.Http;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace LogProxy.Lib.Tests.Unit

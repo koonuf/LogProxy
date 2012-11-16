@@ -1,11 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net.Sockets;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace LogProxy.Lib.Sockets
@@ -24,10 +20,10 @@ namespace LogProxy.Lib.Sockets
         private Guid id;
 
         public WorkerSocketBase(ProxySettings settings)
-	    {
+        {
             this.Settings = settings;
             this.id = Guid.NewGuid();
-	    }
+        }
 
         protected ProxySettings Settings { get; private set; }
 
