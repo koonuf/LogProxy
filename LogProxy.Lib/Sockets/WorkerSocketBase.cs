@@ -56,35 +56,38 @@ namespace LogProxy.Lib.Sockets
             }
         }
 
-        protected void EndSocketReceive(SocketWrapper socket, IAsyncResult result, out int bytesReceived)
+        protected int EndSocketReceive(SocketWrapper socket, IAsyncResult result)
         {
-            bytesReceived = 0;
+            int bytesReceived = 0;
 
             if (this.finishScheduled)
             {
                 this.receiveFinished = true;
-                return;
             }
-
-            try
+            else
             {
-                bytesReceived = socket.EndReceive(result);
-                if (bytesReceived == 0)
+                try
+                {
+                    bytesReceived = socket.EndReceive(result);
+                    if (bytesReceived == 0)
+                    {
+                        this.receiveFinished = true;
+                        this.ScheduleFinish();
+                    }
+                }
+                catch (SocketException)
+                {
+                    this.receiveFinished = true;
+                    this.ScheduleFinish();
+                }
+                catch (IOException)
                 {
                     this.receiveFinished = true;
                     this.ScheduleFinish();
                 }
             }
-            catch (SocketException)
-            {
-                this.receiveFinished = true;
-                this.ScheduleFinish();
-            }
-            catch (IOException)
-            {
-                this.receiveFinished = true;
-                this.ScheduleFinish();
-            }
+
+            return bytesReceived;
         }
 
         protected void StartSendDataTask(SocketWrapper targetSocket, BlockingCollection<byte[]> sourceDataQueue)

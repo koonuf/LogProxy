@@ -2,6 +2,9 @@
 
 namespace LogProxy.Lib.Http
 {
+    /// <summary>
+    /// HTTP request and corresponding response from server
+    /// </summary>
     public class HttpMessage : IDisposable
     {
         private HeaderSearchBuffer requestHeaderBuffer;

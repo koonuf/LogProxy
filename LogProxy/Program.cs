@@ -25,7 +25,7 @@ namespace LogProxy
 
             var settings = ConstructSettings();
             var listener = new TcpListener(settings);
-            listener.StartListenToNewConnections();
+            listener.ListenToNewConnections();
         }
 
         private static ProxySettings ConstructSettings()

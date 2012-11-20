@@ -20,20 +20,12 @@ namespace LogProxy.Lib.Sockets
         private BlockingCollection<byte[]> fromServerDataQueue = new BlockingCollection<byte[]>();
 
         private Dictionary<string, ServerWorkerSocket> serverSockets = new Dictionary<string, ServerWorkerSocket>();
-        private HttpMessage currentMessage;
+        private HttpMessage currentHttpMessage;
 
         public ClientWorkerSocket(Socket workerSocket, ProxySettings settings)
             : base(settings)
         {
             this.workerSocket = new SocketWrapper(workerSocket, settings);
-        }
-
-        public void EnqueueData(byte[] data)
-        {
-            if (!this.finishScheduled)
-            {
-                this.fromServerDataQueue.Add(data);
-            }
         }
 
         public void StartRelay()
@@ -49,15 +41,12 @@ namespace LogProxy.Lib.Sockets
 
         private void StartSendToClientTask()
         {
-            this.StartSendDataTask(
-                targetSocket: this.workerSocket, 
-                sourceDataQueue: this.fromServerDataQueue);
+            this.StartSendDataTask(targetSocket: this.workerSocket, sourceDataQueue: this.fromServerDataQueue);
         }
 
         private void OnClientDataReceived(IAsyncResult result)
         {
-            int bytesRead;
-            this.EndSocketReceive(this.workerSocket, result, out bytesRead);
+            int bytesRead = this.EndSocketReceive(this.workerSocket, result);
 
             if (bytesRead > 0)
             {
@@ -72,34 +61,81 @@ namespace LogProxy.Lib.Sockets
                     this.dataBuffer = new byte[DataBufferSize];
                 }
 
-                this.UpdateCurrentClientMessage(data);
+                this.UpdateCurrentClientHttpMessage(data);
                 this.ClientReceive();
             }
         }
 
-        private void UpdateCurrentClientMessage(byte[] clientData)
+        private void UpdateCurrentClientHttpMessage(byte[] clientData)
         {
-            this.EnsureClientMessage();
+            this.EnsureCurrentHttpMessage();
 
             while (clientData != null)
             {
-                byte[] messageData = this.currentMessage.AddRequestData(clientData);
+                byte[] httpMessageData = this.currentHttpMessage.AddRequestData(clientData);
 
-                if (this.currentMessage.Request.IsRequestToSecureConnection)
+                if (this.currentHttpMessage.Request.IsRequestToSecureConnection)
                 {
                     this.TransferToSecure();
                     return;
                 }
 
-                this.TryEnqueueCurrentMessageToServerSocket(messageData);
+                this.EnqueueClientDataToServerSocket(httpMessageData);
 
-                if (!this.currentMessage.Request.FinishedLoading)
+                if (!this.currentHttpMessage.Request.FinishedLoading)
                 {
                     return;
                 }
 
-                clientData = GetOffsetContent(clientData, this.currentMessage.Request.ExtraContentOffset);
-                this.ResetCurrentMessage();
+                // get data of next request
+                clientData = GetOffsetContent(clientData, this.currentHttpMessage.Request.ExtraContentOffset);
+
+                this.ResetCurrentHttpMessage();
+            }
+        }
+
+        private bool GetOrCreateServerSocket(out ServerWorkerSocket serverSocket)
+        {
+            string remoteHost = this.currentHttpMessage.Request.Host;
+
+            if (!serverSockets.TryGetValue(remoteHost, out serverSocket))
+            {
+                serverSocket = new ServerWorkerSocket(this.Settings, remoteHost, this, this.workerSocket);
+                serverSockets.Add(remoteHost, serverSocket);
+                return false;
+            }
+
+            return true;
+        }
+
+        private void EnqueueClientDataToServerSocket(byte[] httpMessageData)
+        {
+            if (!this.currentHttpMessage.Request.IsInitialized)
+            {
+                this.fromClientDataQueue.Enqueue(httpMessageData);
+            }
+            else
+            {
+                ServerWorkerSocket serverSocket;
+                bool serverSocketStarted = GetOrCreateServerSocket(out serverSocket);
+
+                if (!this.currentHttpMessage.ServerRelayInitiated)
+                {
+                    serverSocket.EnqueueMessage(this.currentHttpMessage);
+                    this.currentHttpMessage.ServerRelayInitiated = true;
+                }
+
+                while (this.fromClientDataQueue.Count > 0)
+                {
+                    serverSocket.EnqueueData(this.fromClientDataQueue.Dequeue());
+                }
+
+                serverSocket.EnqueueData(httpMessageData);
+
+                if (!serverSocketStarted)
+                {
+                    serverSocket.Start();
+                }
             }
         }
 
@@ -108,11 +144,11 @@ namespace LogProxy.Lib.Sockets
             this.workerSocket.StartTransferToSecureAsClient();
             ServerWorkerSocket serverSocket;
 
-            if (CreateServerSocket(out serverSocket))
+            if (GetOrCreateServerSocket(out serverSocket))
             {
                 try
                 {
-                    this.workerSocket.EndTransferToSecureAsClient(this.currentMessage.Request.Host);
+                    this.workerSocket.EndTransferToSecureAsClient(this.currentHttpMessage.Request.Host);
                 }
                 catch (AuthenticationException)
                 {
@@ -128,64 +164,27 @@ namespace LogProxy.Lib.Sockets
                 serverSocket.Start();
             }
 
-            this.ResetCurrentMessage();
+            this.ResetCurrentHttpMessage();
         }
 
-        private bool CreateServerSocket(out ServerWorkerSocket serverSocket)
+        private void ResetCurrentHttpMessage()
         {
-            string remoteHost = this.currentMessage.Request.Host;
-
-            if (!serverSockets.TryGetValue(remoteHost, out serverSocket))
-            {
-                serverSocket = new ServerWorkerSocket(this.Settings, remoteHost, this, this.workerSocket);
-                serverSockets.Add(remoteHost, serverSocket);
-                return false;
-            }
-
-            return true;
+            this.currentHttpMessage = new HttpMessage(this.Settings);
         }
 
-        private void TryEnqueueCurrentMessageToServerSocket(byte[] messageData)
+        private void EnsureCurrentHttpMessage()
         {
-            if (!this.currentMessage.Request.IsInitialized)
+            if (this.currentHttpMessage == null)
             {
-                this.fromClientDataQueue.Enqueue(messageData);
-            }
-            else
-            {
-                ServerWorkerSocket serverSocket;
-                bool serverSocketStarted = CreateServerSocket(out serverSocket);
-
-                if (!this.currentMessage.ServerRelayInitiated)
-                {
-                    serverSocket.EnqueueMessage(this.currentMessage);
-                    this.currentMessage.ServerRelayInitiated = true;
-                }
-
-                while (this.fromClientDataQueue.Count > 0)
-                {
-                    serverSocket.EnqueueData(this.fromClientDataQueue.Dequeue());
-                }
-
-                serverSocket.EnqueueData(messageData);
-
-                if (!serverSocketStarted)
-                {
-                    serverSocket.Start();
-                }
+                this.ResetCurrentHttpMessage();
             }
         }
 
-        private void ResetCurrentMessage()
+        public void EnqueueServerData(byte[] data)
         {
-            this.currentMessage = new HttpMessage(this.Settings);
-        }
-
-        private void EnsureClientMessage()
-        {
-            if (this.currentMessage == null)
+            if (!this.finishScheduled)
             {
-                this.ResetCurrentMessage();
+                this.fromServerDataQueue.Add(data);
             }
         }
 

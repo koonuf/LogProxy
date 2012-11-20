@@ -151,8 +151,7 @@ namespace LogProxy.Lib.Sockets
 
         private void OnServerDataReceived(IAsyncResult result)
         {
-            int bytesRead;
-            this.EndSocketReceive(this.workerSocket, result, out bytesRead);
+            int bytesRead = this.EndSocketReceive(this.workerSocket, result);
 
             if (bytesRead > 0)
             {
@@ -167,7 +166,7 @@ namespace LogProxy.Lib.Sockets
                     this.dataBuffer = new byte[DataBufferSize];
                 }
 
-                this.clientWorkerSocket.EnqueueData(data);
+                this.clientWorkerSocket.EnqueueServerData(data);
                 this.UpdateCurrentMessage(data);
                 this.ServerReceive();
             }

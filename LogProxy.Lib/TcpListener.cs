@@ -19,7 +19,7 @@ namespace LogProxy.Lib
             this.settings = settings;
         }
 
-        public void StartListenToNewConnections()
+        public void ListenToNewConnections()
         {
             if (this.listenSocket == null)
             {
