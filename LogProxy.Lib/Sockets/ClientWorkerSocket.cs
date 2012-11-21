@@ -94,18 +94,18 @@ namespace LogProxy.Lib.Sockets
             }
         }
 
-        private bool GetOrCreateServerSocket(out ServerWorkerSocket serverSocket)
+        private ServerWorkerSocket GetOrCreateServerSocket()
         {
             string remoteHost = this.currentHttpMessage.Request.Host;
-
+            
+            ServerWorkerSocket serverSocket;
             if (!serverSockets.TryGetValue(remoteHost, out serverSocket))
             {
                 serverSocket = new ServerWorkerSocket(this.Settings, remoteHost, this, this.workerSocket);
                 serverSockets.Add(remoteHost, serverSocket);
-                return false;
             }
 
-            return true;
+            return serverSocket;
         }
 
         private void EnqueueClientDataToServerSocket(byte[] httpMessageData)
@@ -116,12 +116,11 @@ namespace LogProxy.Lib.Sockets
             }
             else
             {
-                ServerWorkerSocket serverSocket;
-                bool serverSocketStarted = GetOrCreateServerSocket(out serverSocket);
+                ServerWorkerSocket serverSocket = GetOrCreateServerSocket();
 
                 if (!this.currentHttpMessage.ServerRelayInitiated)
                 {
-                    serverSocket.EnqueueMessage(this.currentHttpMessage);
+                    serverSocket.EnqueueHttpMessage(this.currentHttpMessage);
                     this.currentHttpMessage.ServerRelayInitiated = true;
                 }
 
@@ -132,38 +131,14 @@ namespace LogProxy.Lib.Sockets
 
                 serverSocket.EnqueueData(httpMessageData);
 
-                if (!serverSocketStarted)
-                {
-                    serverSocket.Start();
-                }
+                serverSocket.Start();
             }
         }
 
         private void TransferToSecure()
         {
             this.workerSocket.StartTransferToSecureAsClient();
-            ServerWorkerSocket serverSocket;
-
-            if (GetOrCreateServerSocket(out serverSocket))
-            {
-                try
-                {
-                    this.workerSocket.EndTransferToSecureAsClient(this.currentHttpMessage.Request.Host);
-                }
-                catch (AuthenticationException)
-                {
-                    this.ScheduleFinish();
-                }
-                catch (SocketException)
-                {
-                    this.ScheduleFinish();
-                }
-            }
-            else
-            {
-                serverSocket.Start();
-            }
-
+            this.GetOrCreateServerSocket().Start();
             this.ResetCurrentHttpMessage();
         }
 
@@ -180,7 +155,7 @@ namespace LogProxy.Lib.Sockets
             }
         }
 
-        public void EnqueueServerData(byte[] data)
+        public void EnqueueFromServerData(byte[] data)
         {
             if (!this.finishScheduled)
             {

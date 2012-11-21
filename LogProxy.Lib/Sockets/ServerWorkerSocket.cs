@@ -9,13 +9,14 @@ namespace LogProxy.Lib.Sockets
     public class ServerWorkerSocket : WorkerSocketBase
     {
         private BlockingCollection<byte[]> dataQueue = new BlockingCollection<byte[]>();
-        private ConcurrentQueue<HttpMessage> messageQueue = new ConcurrentQueue<HttpMessage>();
+        private ConcurrentQueue<HttpMessage> httpMessageQueue = new ConcurrentQueue<HttpMessage>();
         private HttpMessage currentMessage;
         private string remoteHost;
         private SocketWrapper workerSocket;
         private SocketWrapper clientSocket;
         private byte[] dataBuffer = new byte[DataBufferSize];
         private ClientWorkerSocket clientWorkerSocket;
+        private volatile bool started;
 
         private readonly object syncLock = new object();
 
@@ -35,20 +36,24 @@ namespace LogProxy.Lib.Sockets
             }
         }
 
-        public void EnqueueMessage(HttpMessage message)
+        public void EnqueueHttpMessage(HttpMessage message)
         {
-            this.messageQueue.Enqueue(message);
+            this.httpMessageQueue.Enqueue(message);
         }
 
         public void Start()
         {
-            var connector = new HostConnector(
-                    host: this.remoteHost,
-                    secure: this.clientSocket.IsSecure,
-                    connectionMadeCallback: OnConnectedToServer,
-                    errorCallback: () => { this.ScheduleFinish(); });
+            if (!started)
+            {
+                var connector = new HostConnector(
+                        host: this.remoteHost,
+                        secure: this.clientSocket.IsSecure,
+                        connectionMadeCallback: OnConnectedToServer,
+                        errorCallback: () => { this.ScheduleFinish(); });
 
-            connector.StartConnecting();
+                connector.StartConnecting();
+                started = true;
+            }
         }
 
         private void OnConnectedToServer(Socket workerSocket)
@@ -140,7 +145,7 @@ namespace LogProxy.Lib.Sockets
             if (this.currentMessage == null)
             {
                 HttpMessage message;
-                if (!this.messageQueue.TryDequeue(out message))
+                if (!this.httpMessageQueue.TryDequeue(out message))
                 {
                     throw new InvalidOperationException("No messages in the queue to write response to");
                 }
@@ -166,7 +171,7 @@ namespace LogProxy.Lib.Sockets
                     this.dataBuffer = new byte[DataBufferSize];
                 }
 
-                this.clientWorkerSocket.EnqueueServerData(data);
+                this.clientWorkerSocket.EnqueueFromServerData(data);
                 this.UpdateCurrentMessage(data);
                 this.ServerReceive();
             }
