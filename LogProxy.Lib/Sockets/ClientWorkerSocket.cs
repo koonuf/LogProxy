@@ -11,7 +11,7 @@ namespace LogProxy.Lib.Sockets
     public class ClientWorkerSocket : WorkerSocketBase
     {
         private const string HostHeaderName = "Host";
-
+        
         private SocketWrapper workerSocket;
 
         private byte[] dataBuffer = new byte[DataBufferSize];
@@ -134,6 +134,7 @@ namespace LogProxy.Lib.Sockets
                 serverSocket.Start();
             }
         }
+
 
         private void TransferToSecure()
         {
