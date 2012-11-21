@@ -135,7 +135,6 @@ namespace LogProxy.Lib.Sockets
             }
         }
 
-
         private void TransferToSecure()
         {
             this.workerSocket.StartTransferToSecureAsClient();
