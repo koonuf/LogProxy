@@ -12,7 +12,7 @@ namespace LogProxy.Lib.Sockets
     {
         private const string SecureTunnelEstablishedResponse = "HTTP/1.1 200 Connection established\r\n\r\n";
 
-        private Socket workerSocket;
+        private Socket socket;
         private SslStream sslStream;
 
         private volatile bool isSecure;
@@ -20,9 +20,9 @@ namespace LogProxy.Lib.Sockets
         private ManualResetEventSlim transferToSecureWaitHandle;
         private ProxySettings settings;
 
-        public SocketWrapper(Socket workerSocket, ProxySettings settings)
+        public SocketWrapper(Socket socket, ProxySettings settings)
         {
-            this.workerSocket = workerSocket;
+            this.socket = socket;
             this.settings = settings;
         }
 
@@ -39,7 +39,7 @@ namespace LogProxy.Lib.Sockets
             }
             else
             {
-                this.workerSocket.BeginReceive(buffer, offset, size, SocketFlags.None, callback, state: null);
+                this.socket.BeginReceive(buffer, offset, size, SocketFlags.None, callback, state: null);
             }
         }
 
@@ -51,7 +51,7 @@ namespace LogProxy.Lib.Sockets
             }
             else
             {
-                return this.workerSocket.EndReceive(asyncResult);
+                return this.socket.EndReceive(asyncResult);
             }
         }
 
@@ -63,7 +63,7 @@ namespace LogProxy.Lib.Sockets
             }
             else
             {
-                this.workerSocket.Send(buffer);
+                this.socket.Send(buffer);
             }
         }
 
@@ -71,7 +71,7 @@ namespace LogProxy.Lib.Sockets
         {
             if (!this.isSecure)
             {
-                this.sslStream = new SslStream(new SocketStream(this.workerSocket), leaveInnerStreamOpen: true);
+                this.sslStream = new SslStream(new SocketStream(this.socket), leaveInnerStreamOpen: true);
                 this.sslStream.AuthenticateAsClient(host);
                 this.isSecure = true;
             }
@@ -98,9 +98,9 @@ namespace LogProxy.Lib.Sockets
             {
                 this.inTransferToSecure = false;
 
-                this.workerSocket.Send(Encoding.ASCII.GetBytes(SecureTunnelEstablishedResponse));
+                this.socket.Send(Encoding.ASCII.GetBytes(SecureTunnelEstablishedResponse));
 
-                this.sslStream = new SslStream(new SocketStream(this.workerSocket), leaveInnerStreamOpen: true);
+                this.sslStream = new SslStream(new SocketStream(this.socket), leaveInnerStreamOpen: true);
                 X509Certificate2 serverCertificate = this.settings.CertificateProvider.GetCertificateForHost(remoteHost);
                 this.sslStream.AuthenticateAsServer(serverCertificate);
 
@@ -115,7 +115,7 @@ namespace LogProxy.Lib.Sockets
                 this.sslStream.Close();
             }
 
-            Utils.CloseSocket(this.workerSocket);
+            Utils.CloseSocket(this.socket);
         }
 
         public void Dispose()
@@ -126,7 +126,7 @@ namespace LogProxy.Lib.Sockets
 
         protected virtual void Dispose(bool disposing)
         {
-            Utils.DisposeSocket(this.workerSocket);
+            Utils.DisposeSocket(this.socket);
 
             if (this.sslStream != null)
             {

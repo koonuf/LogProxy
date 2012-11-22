@@ -11,7 +11,7 @@ namespace LogProxy.Lib.Streams
     {
         private byte[] dataBuffer = new byte[1024 * 2];
         private int bufferSize;
-        private ManualResetEvent waitHandle = new ManualResetEvent(false);
+        private ManualResetEventSlim waitHandle = new ManualResetEventSlim(false);
         private readonly object syncLock = new object();
         private volatile bool finished;
 
@@ -41,23 +41,26 @@ namespace LogProxy.Lib.Streams
             {
                 if (!this.finished)
                 {
-                    waitHandle.WaitOne();
+                    waitHandle.Wait();
                 }
 
                 lock (this.syncLock)
                 {
                     count = Math.Min(count, this.bufferSize - (int)this.Position);
-                    if (count >= 0)
+                    if (count > 0)
                     {
                         Buffer.BlockCopy(this.dataBuffer, (int)this.Position, buffer, offset, count);
                         this.Position += count;
+                        return count;
                     }
-                    else
+                    else if (!this.finished)
                     {
                         this.waitHandle.Reset();
                     }
-
-                    return count;
+                    else
+                    {
+                        return 0;
+                    }
                 }
             }
         }
@@ -65,6 +68,7 @@ namespace LogProxy.Lib.Streams
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
+
             if (this.waitHandle != null)
             {
                 this.waitHandle.Set();

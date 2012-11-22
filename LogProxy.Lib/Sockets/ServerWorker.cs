@@ -8,16 +8,23 @@ namespace LogProxy.Lib.Sockets
 {
     public class ServerWorker : WorkerBase
     {
-        private BlockingCollection<byte[]> dataQueue = new BlockingCollection<byte[]>();
+        // chunks of client data to be sent to server
+        private BlockingCollection<byte[]> toServerDataQueue = new BlockingCollection<byte[]>();
+
+        // HTTP messages to the remote host, which client already started, but have not yet started on server side
         private ConcurrentQueue<HttpMessage> httpMessageQueue = new ConcurrentQueue<HttpMessage>();
+
+        // HTTP message, which current bytes on the socket correspond to
         private HttpMessage currentMessage;
+
         private string remoteHost;
         private SocketWrapper workerSocket;
-        private SocketWrapper clientSocket;
         private byte[] dataBuffer = new byte[DataBufferSize];
-        private ClientWorker clientWorker;
-        private volatile bool started;
 
+        private SocketWrapper clientSocket;
+        private ClientWorker clientWorker;
+
+        private volatile bool started;
         private readonly object syncLock = new object();
 
         public ServerWorker(ProxySettings settings, string remoteHost, ClientWorker clientWorker, SocketWrapper clientSocket)
@@ -32,7 +39,7 @@ namespace LogProxy.Lib.Sockets
         {
             if (!this.finishScheduled)
             {
-                this.dataQueue.Add(data);
+                this.toServerDataQueue.Add(data);
             }
         }
 
@@ -91,14 +98,35 @@ namespace LogProxy.Lib.Sockets
 
         private void StartSendToServerTask()
         {
-            this.StartSendDataTask(
-                targetSocket: this.workerSocket,
-                sourceDataQueue: this.dataQueue);
+            this.StartSendDataTask(targetSocket: this.workerSocket, sourceDataQueue: this.toServerDataQueue);
         }
 
         private void ServerReceive()
         {
             this.SocketReceive(this.workerSocket, this.dataBuffer, this.OnServerDataReceived);
+        }
+
+        private void OnServerDataReceived(IAsyncResult result)
+        {
+            int bytesRead = this.EndSocketReceive(this.workerSocket, result);
+
+            if (bytesRead > 0)
+            {
+                byte[] data;
+                if (bytesRead < this.dataBuffer.Length)
+                {
+                    data = Utils.CopyArray(this.dataBuffer, bytesRead);
+                }
+                else
+                {
+                    data = this.dataBuffer;
+                    this.dataBuffer = new byte[DataBufferSize];
+                }
+
+                this.clientWorker.EnqueueFromServerData(data);
+                this.UpdateCurrentMessage(data);
+                this.ServerReceive();
+            }
         }
 
         private void UpdateCurrentMessage(byte[] data)
@@ -154,32 +182,9 @@ namespace LogProxy.Lib.Sockets
             }
         }
 
-        private void OnServerDataReceived(IAsyncResult result)
-        {
-            int bytesRead = this.EndSocketReceive(this.workerSocket, result);
-
-            if (bytesRead > 0)
-            {
-                byte[] data;
-                if (bytesRead < this.dataBuffer.Length)
-                {
-                    data = Utils.CopyArray(this.dataBuffer, bytesRead);
-                }
-                else
-                {
-                    data = this.dataBuffer;
-                    this.dataBuffer = new byte[DataBufferSize];
-                }
-
-                this.clientWorker.EnqueueFromServerData(data);
-                this.UpdateCurrentMessage(data);
-                this.ServerReceive();
-            }
-        }
-
         protected override void BeforeFinishScheduled()
         {
-            this.dataQueue.CompleteAdding();
+            this.toServerDataQueue.CompleteAdding();
             if (this.workerSocket != null)
             {
                 this.workerSocket.Close();
@@ -200,9 +205,9 @@ namespace LogProxy.Lib.Sockets
         {
             base.Dispose(disposing);
 
-            if (this.dataQueue != null)
+            if (this.toServerDataQueue != null)
             {
-                this.dataQueue.Dispose();
+                this.toServerDataQueue.Dispose();
             }
 
             if (this.workerSocket != null)
