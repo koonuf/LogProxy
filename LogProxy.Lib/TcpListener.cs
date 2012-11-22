@@ -49,7 +49,7 @@ namespace LogProxy.Lib
             Socket listener = (Socket)result.AsyncState;
             Socket workerSocket = listener.EndAccept(result);
 
-            var proxy = new ClientWorkerSocket(workerSocket, this.settings);
+            var proxy = new ClientWorker(workerSocket, this.settings);
             proxy.StartRelay();
         }
 

@@ -123,6 +123,16 @@ namespace LogProxy.Lib
             return value;
         }
 
+        public static byte[] GetOffsetContent(byte[] data, int offsetLength)
+        {
+            if (offsetLength > 0)
+            {
+                return Utils.CopyArray(data, data.Length - offsetLength, offsetLength);
+            }
+
+            return null;
+        }
+
         public static void DisposeSocket(Socket socket)
         {
             if (socket != null)
