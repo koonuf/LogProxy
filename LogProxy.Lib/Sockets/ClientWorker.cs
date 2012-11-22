@@ -126,7 +126,7 @@ namespace LogProxy.Lib.Sockets
 
         private void TransferToSecure()
         {
-            this.workerSocket.StartTransferToSecureAsClient();
+            this.workerSocket.StartTransferToSecureClient();
             this.GetOrCreateServerSocket().Start();
             this.ResetCurrentHttpMessage();
         }

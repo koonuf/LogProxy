@@ -77,8 +77,8 @@ namespace LogProxy.Lib.Sockets
             {
                 try
                 {
-                    this.workerSocket.TransferToSecureAsServer(this.remoteHost);
-                    this.clientSocket.EndTransferToSecureAsClient(this.remoteHost);
+                    this.workerSocket.TransferToSecureServer(this.remoteHost);
+                    this.clientSocket.FinishTransferToSecureClient(this.remoteHost);
                 }
                 catch (AuthenticationException)
                 {

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LogProxy", "LogProxy\LogProxy.csproj", "{ED3CF737-43CD-4AC3-977C-3FB798C00FFB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LogProxy.Console", "LogProxy.Console\LogProxy.Console.csproj", "{ED3CF737-43CD-4AC3-977C-3FB798C00FFB}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LogProxy.Lib", "LogProxy.Lib\LogProxy.Lib.csproj", "{11E472C8-E87C-4F1B-8219-53F331869D9D}"
 EndProject

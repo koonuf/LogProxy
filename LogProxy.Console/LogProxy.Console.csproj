@@ -7,8 +7,8 @@
     <ProjectGuid>{ED3CF737-43CD-4AC3-977C-3FB798C00FFB}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>LogProxy</RootNamespace>
-    <AssemblyName>LogProxy</AssemblyName>
+    <RootNamespace>LogProxy.Console</RootNamespace>
+    <AssemblyName>LogProxy.Console</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />

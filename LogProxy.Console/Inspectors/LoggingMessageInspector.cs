@@ -5,7 +5,7 @@ using System.IO;
 using LogProxy.Lib;
 using LogProxy.Lib.Inspection;
 
-namespace LogProxy.Inspectors
+namespace LogProxy.Console.Inspectors
 {
     public class LoggingMessageInspector : IMessageInspector
     {

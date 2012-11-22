@@ -67,7 +67,7 @@ namespace LogProxy.Lib.Sockets
             }
         }
 
-        public void TransferToSecureAsServer(string host)
+        public void TransferToSecureServer(string host)
         {
             if (!this.isSecure)
             {
@@ -77,7 +77,7 @@ namespace LogProxy.Lib.Sockets
             }
         }
 
-        public void StartTransferToSecureAsClient()
+        public void StartTransferToSecureClient()
         {
             if (!this.isSecure)
             {
@@ -92,7 +92,7 @@ namespace LogProxy.Lib.Sockets
             get { return this.isSecure; }
         }
 
-        public void EndTransferToSecureAsClient(string remoteHost)
+        public void FinishTransferToSecureClient(string remoteHost)
         {
             if (this.inTransferToSecure)
             {

@@ -4,7 +4,7 @@ using LogProxy.Lib;
 using LogProxy.Lib.Logging;
 using LogProxy.Lib.Sockets;
 
-namespace LogProxy
+namespace LogProxy.Console
 {
     class Program
     {
