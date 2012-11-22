@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Net.Sockets;
 using System.Security.Authentication;
 using LogProxy.Lib.Http;
+using LogProxy.Lib.Inspection;
 
 namespace LogProxy.Lib.Sockets
 {
@@ -26,6 +27,7 @@ namespace LogProxy.Lib.Sockets
 
         private volatile bool started;
         private readonly object syncLock = new object();
+        IInspectorFactory inspectorFactory;
 
         public ServerWorker(ProxySettings settings, string remoteHost, ClientWorker clientWorker, SocketWrapper clientSocket)
             : base(settings)
@@ -33,6 +35,7 @@ namespace LogProxy.Lib.Sockets
             this.remoteHost = remoteHost;
             this.clientWorker = clientWorker;
             this.clientSocket = clientSocket;
+            this.inspectorFactory = settings.InspectorFactory;
         }
 
         public void EnqueueFromClientData(byte[] data)
@@ -56,7 +59,8 @@ namespace LogProxy.Lib.Sockets
                         host: this.remoteHost,
                         secure: this.clientSocket.IsSecure,
                         connectionMadeCallback: OnConnectedToServer,
-                        errorCallback: () => { this.ScheduleFinish(); });
+                        errorCallback: () => { this.ScheduleFinish(); },
+                        settings: this.Settings);
 
                 connector.StartConnecting();
                 started = true;
@@ -161,10 +165,6 @@ namespace LogProxy.Lib.Sockets
             if (this.currentMessage != null)
             {
                 this.currentMessage.Stop();
-                if (this.Settings != null && this.Settings.Logger != null)
-                {
-                    this.Settings.Logger.LogMessageFinished(this.currentMessage);
-                }
             }
         }
 

@@ -2,7 +2,7 @@
 {
     public static class InspectionHelper
     {
-        public static void SignalStartConnection(this IServerConnectionInspector connectionInspector)
+        public static void SafeStartConnection(this IServerConnectionInspector connectionInspector)
         {
             if (connectionInspector != null)
             {
@@ -10,7 +10,7 @@
             }
         }
 
-        public static void SignalStartDnsResolve(this IServerConnectionInspector connectionInspector)
+        public static void SafeStartDnsResolve(this IServerConnectionInspector connectionInspector)
         {
             if (connectionInspector != null)
             {
@@ -18,7 +18,7 @@
             }
         }
 
-        public static void SignalFinishDnsResolve(this IServerConnectionInspector connectionInspector)
+        public static void SafeFinishDnsResolve(this IServerConnectionInspector connectionInspector)
         {
             if (connectionInspector != null)
             {
@@ -26,11 +26,35 @@
             }
         }
 
-        public static void SignalConnectionMade(this IServerConnectionInspector connectionInspector)
+        public static void SafeConnectionMade(this IServerConnectionInspector connectionInspector)
         {
             if (connectionInspector != null)
             {
                 connectionInspector.ConnectionMade();
+            }
+        }
+
+        public static void SafeServerReceiveFinished(this IMessageInspector messageInspector)
+        {
+            if (messageInspector != null)
+            {
+                messageInspector.ServerReceiveFinished();
+            }
+        }
+
+        public static void SafeAddRequestData(this IMessageInspector messageInspector, byte[] data)
+        {
+            if (messageInspector != null)
+            {
+                messageInspector.AddRequestData(data);
+            }
+        }
+
+        public static void SafeAddResponseData(this IMessageInspector messageInspector, byte[] data)
+        {
+            if (messageInspector != null)
+            {
+                messageInspector.AddResponseData(data);
             }
         }
     }

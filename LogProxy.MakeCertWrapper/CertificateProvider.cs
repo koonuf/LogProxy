@@ -3,7 +3,6 @@ using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using LogProxy.Lib;
-using LogProxy.Lib.Logging;
 
 namespace LogProxy.MakeCertWrapper
 {
@@ -19,17 +18,15 @@ namespace LogProxy.MakeCertWrapper
         private static readonly object syncLock = new object();
 
         private string makeCertPath;
-        private IMessageLogger logger;
 
-        public CertificateProvider(string makeCertPath, IMessageLogger logger)
+        public CertificateProvider(string makeCertPath)
         {
             this.makeCertPath = makeCertPath;
-            this.logger = logger;
         }
 
         public void EnsureRootCertificate()
         {
-            this.Log(MessageLevel.Info, "Checking root certificate");
+            //this.Log(MessageLevel.Info, "Checking root certificate");
 
             const StoreName storeName = DefaultIssuerCertificateStoreName;
             const StoreLocation storeLocation = DefaultIssuerCertificateStoreLocation;
@@ -41,7 +38,7 @@ namespace LogProxy.MakeCertWrapper
                 {
                     if (FindCertificateByName(storeName, storeLocation, rootCertName) == null)
                     {
-                        this.Log(MessageLevel.Warning, "Creating root certificate");
+                        //this.Log(MessageLevel.Warning, "Creating root certificate");
                         CreateRootCertificate();
                     }
                 }
@@ -69,7 +66,7 @@ namespace LogProxy.MakeCertWrapper
                 {
                     if ((certificate = FindCertificateByName(storeName, storeLocation, hostCertName)) == null)
                     {
-                        this.Log(MessageLevel.Info, "Creating host certificate for " + host);
+                        //this.Log(MessageLevel.Info, "Creating host certificate for " + host);
 
                         CreateCertificateForHost(hostCertName);
 
@@ -86,14 +83,6 @@ namespace LogProxy.MakeCertWrapper
             }
 
             return certificate;
-        }
-
-        private void Log(MessageLevel level, string message)
-        {
-            if (this.logger != null)
-            {
-                this.logger.LogMessage(MessageCategory.Certificate, level, message);
-            }
         }
 
         private void CreateRootCertificate()

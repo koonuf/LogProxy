@@ -26,7 +26,7 @@ namespace LogProxy.Lib.Sockets
             }
         }
 
-        public HostConnector(string host, bool secure, Action<Socket> connectionMadeCallback, Action errorCallback, IInspectorFactory inspectorFactory = null)
+        public HostConnector(string host, bool secure, Action<Socket> connectionMadeCallback, Action errorCallback, ProxySettings settings)
         {
             this.connectionMadeCallback = connectionMadeCallback;
             this.errorCallback = errorCallback;
@@ -36,15 +36,15 @@ namespace LogProxy.Lib.Sockets
             this.port = uri.Port;
             this.hostIsIP = uri.HostNameType == UriHostNameType.IPv4 || uri.HostNameType == UriHostNameType.IPv6;
 
-            if (inspectorFactory != null)
+            if (settings != null && settings.InspectorFactory != null)
             {
-                this.connectionInspector = inspectorFactory.CreateServerConnectionInspector(this.host, this.port, secure);
+                this.connectionInspector = settings.InspectorFactory.CreateServerConnectionInspector(this.host, this.port, secure);
             }
         }
 
         public void StartConnecting()
         {
-            this.connectionInspector.SignalStartConnection();
+            this.connectionInspector.SafeStartConnection();
 
             if (this.hostIsIP)
             {
@@ -61,7 +61,7 @@ namespace LogProxy.Lib.Sockets
                 }
                 else
                 {
-                    this.connectionInspector.SignalStartDnsResolve();
+                    this.connectionInspector.SafeStartDnsResolve();
 
                     try
                     {
@@ -92,7 +92,7 @@ namespace LogProxy.Lib.Sockets
             try
             {
                 var ips = Dns.EndGetHostAddresses(result);
-                this.connectionInspector.SignalFinishDnsResolve();
+                this.connectionInspector.SafeFinishDnsResolve();
 
                 ip = ips[0];
                 dnsCache[(string)result.AsyncState] = ip;
@@ -127,7 +127,7 @@ namespace LogProxy.Lib.Sockets
                         return;
                     }
 
-                    this.connectionInspector.SignalConnectionMade();
+                    this.connectionInspector.SafeConnectionMade();
                     this.connectionMadeCallback(socket);
                 }, state: null);
             }

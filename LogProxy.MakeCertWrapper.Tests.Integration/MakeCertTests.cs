@@ -8,7 +8,7 @@ namespace LogProxy.MakeCertWrapper.Tests.Integration
         [TestMethod]
         public void Test()
         {
-            var provider = new CertificateProvider(@"C:\Program Files (x86)\Fiddler2\makecert.exe", null);
+            var provider = new CertificateProvider(@"C:\Program Files (x86)\Fiddler2\makecert.exe");
 
             provider.EnsureRootCertificate();
             var certificate = provider.GetCertificateForHost("www.test3.com");

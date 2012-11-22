@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Configuration;
 using LogProxy.Lib;
-using LogProxy.Lib.Logging;
 using LogProxy.Lib.Sockets;
 
 namespace LogProxy.Console
@@ -36,10 +35,9 @@ namespace LogProxy.Console
             var settings = new ProxySettings 
             { 
                 ListenPort = GetSettingValue(ListenPortSettingName, defaultValue: 5555),
-                Logger = new SoapCsvMessageLogger(logFileName, TimeSpan.FromMinutes(inactivityTimeMinutes)),
                 LogMessageBody = GetSettingValue(LogMessageBodySettingName, defaultValue: true),
                 MessageBodyLogDirectory = GetSettingValue(MessageBodyLogDirSettingName, defaultValue: "C:\\Logs"),
-                CertificateProvider = new MakeCertWrapper.CertificateProvider(@"C:\Program Files (x86)\Fiddler2\makecert.exe", null)
+                CertificateProvider = new MakeCertWrapper.CertificateProvider(@"C:\Program Files (x86)\Fiddler2\makecert.exe")
             };
 
             return settings;

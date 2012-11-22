@@ -1,4 +1,5 @@
 ﻿using System;
+using LogProxy.Lib.Inspection;
 
 namespace LogProxy.Lib.Http
 {
@@ -10,6 +11,8 @@ namespace LogProxy.Lib.Http
         private HeaderSearchBuffer requestHeaderBuffer;
         private HeaderSearchBuffer responseHeaderBuffer;
         private ProxySettings settings;
+        private IMessageInspector messageInspector;
+        private bool started;
 
         public HttpMessage(ProxySettings settings)
         {
@@ -19,12 +22,19 @@ namespace LogProxy.Lib.Http
 
             this.requestHeaderBuffer = new HeaderSearchBuffer();
             this.responseHeaderBuffer = new HeaderSearchBuffer();
+
+            if (settings.InspectorFactory != null)
+            {
+                this.messageInspector = settings.InspectorFactory.CreateMessageInspector(this);
+            }
         }
 
         public bool ServerRelayInitiated { get; set; }
 
         public byte[] AddRequestData(byte[] data)
         {
+            this.messageInspector.SafeAddRequestData(data);
+
             this.Request.IncrementContentSize(data.Length);
 
             if (!this.Request.IsInitialized)
@@ -77,6 +87,7 @@ namespace LogProxy.Lib.Http
 
         public void Stop()
         {
+            this.messageInspector.SafeServerReceiveFinished();
             this.Dispose();
         }
 

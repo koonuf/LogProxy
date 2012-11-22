@@ -1,4 +1,4 @@
-﻿using LogProxy.Lib.Logging;
+﻿using LogProxy.Lib.Inspection;
 
 namespace LogProxy.Lib
 {
@@ -10,7 +10,7 @@ namespace LogProxy.Lib
 
         public bool LogMessageBody { get; set; }
 
-        public IHttpMessageLogger Logger { get; set; }
+        public IInspectorFactory InspectorFactory { get; set; }
 
         public ICertificateProvider CertificateProvider { get; set; }
     }
