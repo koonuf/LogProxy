@@ -6,6 +6,6 @@ namespace LogProxy.Lib.Inspection
     {
         IServerConnectionInspector CreateServerConnectionInspector(string host, int port, bool secure);
 
-        IMessageInspector CreateMessageInspector(HttpMessage message);
+        IHttpMessageInspector CreateHttpMessageInspector(HttpMessage message);
     }
 }

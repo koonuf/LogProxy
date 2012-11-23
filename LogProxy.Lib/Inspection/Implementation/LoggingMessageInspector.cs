@@ -7,7 +7,7 @@ using LogProxy.Lib.Inspection;
 
 namespace LogProxy.Lib.Inspection.Implementation
 {
-    public class LoggingMessageInspector : IMessageInspector
+    public class LoggingMessageInspector : IHttpMessageInspector
     {
         private const string LoggerDateFormat = "yyyy-MM-dd-HH-mm-ss-fffffff";
 

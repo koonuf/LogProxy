@@ -50,7 +50,7 @@
     <Compile Include="Http\HeaderSearchBuffer.cs" />
     <Compile Include="Http\HttpHeadersSummary.cs" />
     <Compile Include="ICertificateProvider.cs" />
-    <Compile Include="Inspection\IMessageInspector.cs" />
+    <Compile Include="Inspection\IHttpMessageInspector.cs" />
     <Compile Include="Inspection\IServerConnectionInspector.cs" />
     <Compile Include="Inspection\IInspectorFactory.cs" />
     <Compile Include="Inspection\InspectionHelper.cs" />

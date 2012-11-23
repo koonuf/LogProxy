@@ -6,35 +6,37 @@ namespace LogProxy.Lib.Http
     /// <summary>
     /// HTTP request and corresponding response from server
     /// </summary>
-    public class HttpMessage : IDisposable
+    public class HttpMessage
     {
         private HeaderSearchBuffer requestHeaderBuffer;
         private HeaderSearchBuffer responseHeaderBuffer;
         private ProxySettings settings;
-        private IMessageInspector messageInspector;
-        private bool started;
+        private IHttpMessageInspector messageInspector;
 
         public HttpMessage(ProxySettings settings)
         {
+            this.settings = settings;
+
             this.Request = new HttpRequestInfo();
             this.Response = new HttpResponseInfo();
-            this.settings = settings;
 
             this.requestHeaderBuffer = new HeaderSearchBuffer();
             this.responseHeaderBuffer = new HeaderSearchBuffer();
 
             if (settings.InspectorFactory != null)
             {
-                this.messageInspector = settings.InspectorFactory.CreateMessageInspector(this);
+                this.messageInspector = settings.InspectorFactory.CreateHttpMessageInspector(this);
             }
         }
+
+        public HttpRequestInfo Request { get; set; }
+
+        public HttpResponseInfo Response { get; set; }
 
         public bool ServerRelayInitiated { get; set; }
 
         public byte[] AddRequestData(byte[] data)
         {
-            this.messageInspector.SafeAddRequestData(data);
-
             this.Request.IncrementContentSize(data.Length);
 
             if (!this.Request.IsInitialized)
@@ -46,6 +48,7 @@ namespace LogProxy.Lib.Http
                 {
                     this.Request.InitFromSummary(headersSummary);
                     this.requestHeaderBuffer.Reset();
+                    this.messageInspector.SafeRequestHeadersParsed(headersSummary);
                 }
             }
 
@@ -61,10 +64,12 @@ namespace LogProxy.Lib.Http
                 messageData = data;
             }
 
+            this.messageInspector.SafeAddRequestData(messageData);
+
             return messageData;
         }
 
-        public void AddResponseData(byte[] data)
+        public byte[] AddResponseData(byte[] data)
         {
             this.Response.AddContent(data);
 
@@ -77,28 +82,30 @@ namespace LogProxy.Lib.Http
                 {
                     this.Response.InitFromSummary(headersSummary, this);
                     this.responseHeaderBuffer.Reset();
+                    this.messageInspector.SafeResponseHeadersParsed(headersSummary);
                 }
             }
+
+            byte[] messageData;
+
+            int loadedExtraContentOffset = this.Response.ExtraContentOffset;
+            if (loadedExtraContentOffset > 0)
+            {
+                messageData = Utils.CopyArray(data, 0, data.Length - loadedExtraContentOffset);
+            }
+            else
+            {
+                messageData = data;
+            }
+
+            this.messageInspector.SafeAddResponseData(messageData);
+
+            return messageData;
         }
-
-        public HttpRequestInfo Request { get; set; }
-
-        public HttpResponseInfo Response { get; set; }
 
         public void Stop()
         {
             this.messageInspector.SafeServerReceiveFinished();
-            this.Dispose();
-        }
-
-        public void Dispose()
-        {
-            this.Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
         }
     }
 }

@@ -9,6 +9,10 @@ namespace LogProxy.Lib.Inspection
 {
     public class SoapActionSearchBuffer : IDisposable
     {
+        private const string SoapContentTypeValue = "APPLICATION/SOAP+XML";
+        private const string SoapActionHeader = "SOAPACTION";
+        private const string ContentTypeHeaderName = "CONTENT-TYPE";
+
         private const string AddressingNamespace = "http://www.w3.org/2005/08/addressing";
         private const string ActionTagName = "Action";
 
@@ -64,6 +68,21 @@ namespace LogProxy.Lib.Inspection
                     this.waitHandle.Set();
                 }
             }
+        }
+
+
+        private void Temp()
+        {
+            // string contentType = this.Headers[ContentTypeHeaderName].FirstOrDefault();
+
+            //string soapAction = this.Headers[SoapActionHeader].FirstOrDefault();
+
+            //if (soapAction != null ||
+            //    (contentType != null && contentType.ToUpperInvariant().Contains(SoapContentTypeValue)))
+            //{
+            //    this.IsSoapMessage = true;
+            //    this.SoapAction = soapAction;
+            //}
         }
 
         public void AddContent(byte[] data, int offset, int count)

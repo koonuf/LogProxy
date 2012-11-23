@@ -1,4 +1,5 @@
-﻿namespace LogProxy.Lib.Inspection
+﻿using LogProxy.Lib.Http;
+namespace LogProxy.Lib.Inspection
 {
     public static class InspectionHelper
     {
@@ -34,7 +35,7 @@
             }
         }
 
-        public static void SafeServerReceiveFinished(this IMessageInspector messageInspector)
+        public static void SafeServerReceiveFinished(this IHttpMessageInspector messageInspector)
         {
             if (messageInspector != null)
             {
@@ -42,7 +43,7 @@
             }
         }
 
-        public static void SafeAddRequestData(this IMessageInspector messageInspector, byte[] data)
+        public static void SafeAddRequestData(this IHttpMessageInspector messageInspector, byte[] data)
         {
             if (messageInspector != null)
             {
@@ -50,11 +51,27 @@
             }
         }
 
-        public static void SafeAddResponseData(this IMessageInspector messageInspector, byte[] data)
+        public static void SafeAddResponseData(this IHttpMessageInspector messageInspector, byte[] data)
         {
             if (messageInspector != null)
             {
                 messageInspector.AddResponseData(data);
+            }
+        }
+
+        public static void SafeRequestHeadersParsed(this IHttpMessageInspector messageInspector, HttpHeadersSummary headers)
+        {
+            if (messageInspector != null)
+            {
+                messageInspector.RequestHeadersParsed(headers);
+            }
+        }
+
+        public static void SafeResponseHeadersParsed(this IHttpMessageInspector messageInspector, HttpHeadersSummary headers)
+        {
+            if (messageInspector != null)
+            {
+                messageInspector.ResponseHeadersParsed(headers);
             }
         }
     }

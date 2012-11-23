@@ -4,7 +4,7 @@ using System.Text;
 namespace LogProxy.Lib.Http
 {
     /// <summary>
-    /// Responsible for traversing and delimiting HTTP responsing, which are being transferred in 
+    /// Responsible for traversing and delimiting HTTP responses, which are being transferred in 
     /// chunked mode (chunked transfer encoding)
     /// </summary>
     public class ChunkSearchBuffer

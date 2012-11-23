@@ -6,9 +6,6 @@ namespace LogProxy.Lib.Http
     public class HttpRequestInfo
     {
         private const string HostHeader = "HOST";
-        private const string ContentTypeHeaderName = "CONTENT-TYPE";
-        private const string SoapContentTypeValue = "APPLICATION/SOAP+XML";
-        private const string SoapActionHeader = "SOAPACTION";
         private const string ConnectHttpMethod = "CONNECT";
 
         public string Host { get; set; }
@@ -48,13 +45,9 @@ namespace LogProxy.Lib.Http
 
         public bool IsInitialized { get; set; }
 
-        public string SoapAction { get; private set; }
-
         public bool FinishedLoading { get; private set; }
 
         public int ExtraContentOffset { get; private set; }
-
-        public bool IsSoapMessage { get; set; }
 
         public bool IsRequestToSecureConnection
         {
@@ -78,16 +71,6 @@ namespace LogProxy.Lib.Http
             this.HttpVersion = summary.StatusLine[2];
             this.Headers = summary.Headers;
             this.HeaderLength = summary.HeaderLength;
-
-            string contentType = this.Headers[ContentTypeHeaderName].FirstOrDefault();
-            string soapAction = this.Headers[SoapActionHeader].FirstOrDefault();
-
-            if (soapAction != null ||
-                (contentType != null && contentType.ToUpperInvariant().Contains(SoapContentTypeValue)))
-            {
-                this.IsSoapMessage = true;
-                this.SoapAction = soapAction;
-            }
 
             this.IsInitialized = true;
 
