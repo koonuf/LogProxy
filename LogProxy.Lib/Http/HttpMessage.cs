@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using LogProxy.Lib.Inspection;
 
 namespace LogProxy.Lib.Http
@@ -20,8 +21,8 @@ namespace LogProxy.Lib.Http
             this.Request = new HttpRequestInfo();
             this.Response = new HttpResponseInfo();
 
-            this.requestHeaderBuffer = new HeaderSearchBuffer();
-            this.responseHeaderBuffer = new HeaderSearchBuffer();
+            this.requestHeaderBuffer = new HeaderSearchBuffer(HeaderSearchBufferType.Request);
+            this.responseHeaderBuffer = new HeaderSearchBuffer(HeaderSearchBufferType.Response);
 
             if (settings.InspectorFactory != null)
             {
@@ -37,20 +38,24 @@ namespace LogProxy.Lib.Http
 
         public byte[] AddRequestData(byte[] data)
         {
-            this.Request.IncrementContentSize(data.Length);
-
             if (!this.Request.IsInitialized)
             {
-                this.requestHeaderBuffer.AddData(data);
-
-                HttpHeadersSummary headersSummary = null;
-                if (this.requestHeaderBuffer.FindHeaders(out headersSummary))
+                if (this.requestHeaderBuffer.AddDataAndCheckHeadersFound(data))
                 {
+                    data = this.requestHeaderBuffer.ProcessedData;
+
+                    HttpHeadersSummary headersSummary = this.requestHeaderBuffer.HeadersSummary;
                     this.Request.InitFromSummary(headersSummary);
                     this.requestHeaderBuffer.Reset();
                     this.messageInspector.SafeRequestHeadersParsed(headersSummary);
                 }
+                else
+                {
+                    return null;
+                }
             }
+
+            this.Request.IncrementContentSize(data.Length);
 
             byte[] messageData;
 
@@ -75,11 +80,9 @@ namespace LogProxy.Lib.Http
 
             if (!this.Response.IsInitialized)
             {
-                this.responseHeaderBuffer.AddData(data);
-
-                HttpHeadersSummary headersSummary;
-                if (this.responseHeaderBuffer.FindHeaders(out headersSummary))
+                if (this.responseHeaderBuffer.AddDataAndCheckHeadersFound(data))
                 {
+                    HttpHeadersSummary headersSummary = this.responseHeaderBuffer.HeadersSummary;
                     this.Response.InitFromSummary(headersSummary, this);
                     this.responseHeaderBuffer.Reset();
                     this.messageInspector.SafeResponseHeadersParsed(headersSummary);

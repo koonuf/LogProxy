@@ -36,7 +36,6 @@ namespace LogProxy.Lib.Inspection
         {
             this.waitHandle.Wait();
             this.watch.Stop();
-            Console.WriteLine("Parsing soap action in " + this.watch.ElapsedMilliseconds);
         }
 
         public string SoapAction { get; private set; }

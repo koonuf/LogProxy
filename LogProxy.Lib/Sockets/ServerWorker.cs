@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.IO;
 using System.Net.Sockets;
 using System.Security.Authentication;
 using LogProxy.Lib.Http;
@@ -73,7 +74,7 @@ namespace LogProxy.Lib.Sockets
 
             if (this.finishScheduled)
             {
-                this.workerSocket.Close();
+                this.ScheduleFinish();
                 return;
             }
 
@@ -90,6 +91,11 @@ namespace LogProxy.Lib.Sockets
                     return;
                 }
                 catch (SocketException)
+                {
+                    this.ScheduleFinish();
+                    return;
+                }
+                catch (IOException)
                 {
                     this.ScheduleFinish();
                     return;
@@ -137,7 +143,10 @@ namespace LogProxy.Lib.Sockets
         {
             while (data != null)
             {
-                this.EnsureCurrentMessage();
+                if (!this.EnsureCurrentMessage())
+                {
+                    return;
+                }
 
                 this.currentMessage.AddResponseData(data);
 
@@ -168,27 +177,25 @@ namespace LogProxy.Lib.Sockets
             }
         }
 
-        private void EnsureCurrentMessage()
+        private bool EnsureCurrentMessage()
         {
             if (this.currentMessage == null)
             {
                 HttpMessage message;
                 if (!this.httpMessageQueue.TryDequeue(out message))
                 {
-                    throw new InvalidOperationException("No messages in the queue to write response to");
+                    return false;
                 }
 
                 this.currentMessage = message;
             }
+
+            return true;
         }
 
         protected override void BeforeFinishScheduled()
         {
             this.toServerDataQueue.CompleteAdding();
-            if (this.workerSocket != null)
-            {
-                this.workerSocket.Close();
-            }
         }
 
         public override void ScheduleFinish()

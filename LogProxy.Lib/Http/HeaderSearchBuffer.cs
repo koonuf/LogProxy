@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
@@ -14,13 +15,15 @@ namespace LogProxy.Lib.Http
         private static readonly int headerBufferSize = 4096;
         private static readonly byte[] headerDelimiter = new byte[] { 13, 10, 13, 10 };
 
-        public byte[] headerBuffer;
-        public int currentHeaderBufferSize;
-        public int nextSearchStart;
+        private byte[] headerBuffer;
+        private int currentHeaderBufferSize;
+        private int nextSearchStart;
+        private HeaderSearchBufferType headerSearchBufferType;
 
-        public HeaderSearchBuffer()
+        public HeaderSearchBuffer(HeaderSearchBufferType headerSearchBufferType)
         {
             this.headerBuffer = new byte[headerBufferSize];
+            this.headerSearchBufferType = headerSearchBufferType;
         }
 
         public static int HeaderDelimiterSize
@@ -31,22 +34,35 @@ namespace LogProxy.Lib.Http
             }
         }
 
-        public void AddData(byte[] data)
-        {
-            int newHeaderBufferSize = this.currentHeaderBufferSize + data.Length;
+        public byte[] ProcessedData { get; private set; }
 
-            Utils.EnsureArraySize(ref this.headerBuffer, newHeaderBufferSize, this.currentHeaderBufferSize);
-            Buffer.BlockCopy(data, 0, this.headerBuffer, this.currentHeaderBufferSize, data.Length);
+        public string HeaderContent { get; private set; }
 
-            currentHeaderBufferSize = newHeaderBufferSize;
-        }
+        public HttpHeadersSummary HeadersSummary { get; private set; }
 
         public int ContentOffset { get; private set; }
 
-        public bool FindHeaders(out string headers)
+        public bool AddDataAndCheckHeadersFound(byte[] data)
         {
-            headers = null;
+            if (this.HeaderContent == null)
+            {
+                int newHeaderBufferSize = this.currentHeaderBufferSize + data.Length;
 
+                Utils.EnsureArraySize(ref this.headerBuffer, newHeaderBufferSize, this.currentHeaderBufferSize);
+                Buffer.BlockCopy(data, 0, this.headerBuffer, this.currentHeaderBufferSize, data.Length);
+
+                this.currentHeaderBufferSize = newHeaderBufferSize;
+
+                return this.FindAndProcessHeaders();
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        private bool FindAndProcessHeaders()
+        {
             if (this.nextSearchStart >= this.currentHeaderBufferSize)
             {
                 return false;
@@ -81,44 +97,38 @@ namespace LogProxy.Lib.Http
                     continue;
                 }
 
-                headers = Encoding.ASCII.GetString(headerBuffer, 0, delimiterStartIndex);
-                this.ContentOffset = this.currentHeaderBufferSize - delimiterStartIndex - headerDelimiter.Length;
+                string headers = Encoding.ASCII.GetString(headerBuffer, 0, delimiterStartIndex);
+                this.ProcessReadyHeaders(headers);
+                
                 return true;
             }
         }
 
-        public bool FindHeaders(out HttpHeadersSummary headersSummary)
+        private void ProcessReadyHeaders(string headers)
         {
-            headersSummary = null;
-            string headersContent;
-
-            if (this.FindHeaders(out headersContent))
+            int contentOffsetSize = this.currentHeaderBufferSize - headers.Length - HeaderDelimiterSize;
+            byte[] contentOffsetData = null;
+            if (contentOffsetSize > 0)
             {
-                headersSummary = ParseHeaders(headersContent);
-                return true;
+                contentOffsetData = new byte[contentOffsetSize];
+                Buffer.BlockCopy(this.headerBuffer, headers.Length + HeaderDelimiterSize, contentOffsetData, 0, contentOffsetSize);
             }
 
-            return false;
-        }
+            HttpHeadersSummary summary = new HttpHeadersSummary();
 
-        private static HttpHeadersSummary ParseHeaders(string headers)
-        {
-            HttpHeadersSummary summary = new HttpHeadersSummary { HeadersContent = headers };
+            string[] headerLines = headers.SplitNoEmpty(HeaderLinesSeparator);
 
-            string[] headerParts = headers.SplitNoEmpty(HeaderLinesSeparator);
-
-            if (headerParts.Length < 1)
+            if (headerLines.Length < 1)
             {
                 throw new InvalidOperationException("HTTP message should contain at least one status line");
             }
 
-            summary.HeaderLength = headers.Length + headerDelimiter.Length;
-            summary.StatusLine = headerParts[0].SplitNoEmpty(HeaderStatusLineValuesSeparator, max: 3).ToList();
+            summary.StatusLine = this.ProcessHeaderStatusLine(headerLines[0]);
 
-            summary.Headers = headerParts
+            summary.Headers = headerLines
                 .Skip(1)
-                .Select(line => CheckHeaderValue(line.SplitNoEmpty(HeaderValueSeparator, max: 2)))
-                .ToLookup(h => h[0].ToUpperInvariant(), h => h[1].Trim());
+                .Select(line => ProcessHeaderLine(line))
+                .ToLookup(lineParts => lineParts[0], lineParts => lineParts[1]);
 
             string contentLengthValue = summary.Headers[ContentLengthHeader].FirstOrDefault();
             if (!string.IsNullOrWhiteSpace(contentLengthValue))
@@ -126,17 +136,61 @@ namespace LogProxy.Lib.Http
                 summary.ContentLength = contentLengthValue.ToInt(errorMessage: "Content length header value invalid");
             }
 
-            return summary;
+            headers = string.Join(HeaderStatusLineValuesSeparator, summary.StatusLine)
+                + HeaderLinesSeparator 
+                + string.Join(HeaderLinesSeparator, headerLines.Skip(1));
+
+            this.ProcessedData = System.Text.Encoding.ASCII.GetBytes(headers)
+                .Concat(headerDelimiter)
+                .Concat(contentOffsetData ?? new byte[0])
+                .ToArray();
+
+            summary.HeaderLength = headers.Length + headerDelimiter.Length;
+            summary.HeadersContent = headers;
+
+            this.HeaderContent = headers;
+            this.ContentOffset = contentOffsetSize;
+            this.HeadersSummary = summary;
         }
 
-        private static string[] CheckHeaderValue(string[] value)
+        private IList<string> ProcessHeaderStatusLine(string statusLine)
         {
-            if (value.Length != 2)
+            string[] statusLineParts = statusLine.SplitNoEmpty(HeaderStatusLineValuesSeparator, max: 3);
+
+            if (statusLineParts.Length > 1 && this.headerSearchBufferType == HeaderSearchBufferType.Request)
+            {
+                string requestUri = statusLineParts[1];
+
+                // some servers don't understand absolute paths in HTTP request status line
+                // (browser make it absolute in requests to proxies):
+
+                int searchStart = "https://".Length;
+                if (requestUri != null && !requestUri.StartsWith("/") && requestUri.Length > searchStart)
+                {
+                    int relativeOffset = requestUri.IndexOf('/', searchStart);
+                    if (relativeOffset > 0)
+                    {
+                        statusLineParts[1] = requestUri.Substring(relativeOffset);
+                    }
+                }
+            }
+
+            return statusLineParts.ToList();
+        }
+
+        private static string[] ProcessHeaderLine(string headerLine)
+        {
+            string[] headerLineParts = headerLine.SplitNoEmpty(HeaderValueSeparator, max: 2);
+
+            if (headerLineParts.Length != 2)
             {
                 throw new InvalidOperationException("Header should consist of name/value pair");
             }
 
-            return value;
+            headerLineParts[0] = headerLineParts[0].ToUpperInvariant();
+            headerLineParts[1] = headerLineParts[1].Trim();
+
+            return headerLineParts;
         }
 
         public void Reset()

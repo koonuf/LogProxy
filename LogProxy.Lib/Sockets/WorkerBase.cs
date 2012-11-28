@@ -33,7 +33,7 @@ namespace LogProxy.Lib.Sockets
         {
             if (this.finishScheduled)
             {
-                this.receiveFinished = true;
+                this.FinishReceive();
                 return;
             }
 
@@ -57,7 +57,7 @@ namespace LogProxy.Lib.Sockets
 
             if (this.finishScheduled)
             {
-                this.receiveFinished = true;
+                this.FinishReceive();
             }
             else
             {
@@ -124,6 +124,7 @@ namespace LogProxy.Lib.Sockets
                     if (!this.disposed)
                     {
                         this.BeforeFinishScheduled();
+
                         if (this.sendFinished && this.receiveFinished)
                         {
                             this.Dispose();

@@ -83,7 +83,10 @@ namespace LogProxy.Lib.Sockets
                     return;
                 }
 
-                this.EnqueueClientDataToServerSocket(httpMessageData);
+                if (httpMessageData != null)
+                {
+                    this.EnqueueClientDataToServerSocket(httpMessageData);
+                }
 
                 if (!this.currentHttpMessage.Request.FinishedLoading)
                 {
@@ -179,7 +182,6 @@ namespace LogProxy.Lib.Sockets
         protected override void BeforeFinishScheduled()
         {
             this.fromServerDataQueue.CompleteAdding();
-            this.workerSocket.Close();
         }
 
         protected override void Dispose(bool disposing)

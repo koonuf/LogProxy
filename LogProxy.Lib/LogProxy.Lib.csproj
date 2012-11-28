@@ -41,6 +41,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Http\ChunkSearchBuffer.cs" />
+    <Compile Include="Http\HeaderSearchBufferType.cs" />
     <Compile Include="Inspection\Implementation\LoggingMessageInspector.cs" />
     <Compile Include="Inspection\SoapActionSearchBuffer.cs" />
     <Compile Include="Streams\BlockingMemoryStream.cs" />

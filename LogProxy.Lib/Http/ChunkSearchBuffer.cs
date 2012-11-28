@@ -84,9 +84,7 @@ namespace LogProxy.Lib.Http
 
         private void LoadTrailer(byte[] data)
         {
-            this.headerSearchBuffer.AddData(data);
-            string headers;
-            if (this.headerSearchBuffer.FindHeaders(out headers))
+            if (this.headerSearchBuffer.AddDataAndCheckHeadersFound(data))
             {
                 this.FinishedLoading = true;
                 this.ContentOffset = this.headerSearchBuffer.ContentOffset;
@@ -103,7 +101,7 @@ namespace LogProxy.Lib.Http
             }
             else
             {
-                this.headerSearchBuffer = new HeaderSearchBuffer();
+                this.headerSearchBuffer = new HeaderSearchBuffer(HeaderSearchBufferType.Response);
                 this.loadingTrailer = true;
 
                 int offsetStart = FinalChunkLength - 2;

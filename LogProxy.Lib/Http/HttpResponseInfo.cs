@@ -121,7 +121,7 @@ namespace LogProxy.Lib.Http
 
         public void InitFromSummary(HttpHeadersSummary summary, HttpMessage httpMessage)
         {
-            if (summary.StatusLine.Count != 3)
+            if (summary.StatusLine.Count < 2 || summary.StatusLine.Count > 3)
             {
                 throw new InvalidOperationException("First line of HTTP request should consist of 3 parts");
             }
@@ -129,7 +129,7 @@ namespace LogProxy.Lib.Http
             this.ContentLength = summary.ContentLength.GetValueOrDefault(0);
             this.HttpVersion = summary.StatusLine[0];
             this.Status = summary.StatusLine[1];
-            this.Reason = summary.StatusLine[2];
+            this.Reason = summary.StatusLine.Count == 3 ? summary.StatusLine[2] : null;
             this.Headers = summary.Headers;
             this.HeaderLength = summary.HeaderLength;
 
