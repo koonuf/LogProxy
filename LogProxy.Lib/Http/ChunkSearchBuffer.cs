@@ -130,7 +130,7 @@ namespace LogProxy.Lib.Http
 
         private string GetChunkSizeHeader()
         {
-            return Encoding.ASCII.GetString(this.contentBuffer, 0, this.delimiterStartIndex);
+            return Encoding.ASCII.GetString(this.contentBuffer, 0, this.delimiterStartIndex).Trim();
         }
 
         private bool FindChunkDelimiter()

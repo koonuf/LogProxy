@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Configuration;
 using LogProxy.Lib;
+using LogProxy.Lib.Inspection.Implementation;
 using LogProxy.Lib.Sockets;
 
 namespace LogProxy.Console
@@ -37,8 +38,10 @@ namespace LogProxy.Console
                 ListenPort = GetSettingValue(ListenPortSettingName, defaultValue: 5555),
                 LogMessageBody = GetSettingValue(LogMessageBodySettingName, defaultValue: true),
                 MessageBodyLogDirectory = GetSettingValue(MessageBodyLogDirSettingName, defaultValue: "C:\\Logs"),
-                CertificateProvider = new MakeCertWrapper.CertificateProvider(@"C:\Program Files (x86)\Fiddler2\makecert.exe")
+                CertificateProvider = new MakeCertWrapper.CertificateProvider(@"C:\Program Files (x86)\Fiddler2\makecert.exe"),
             };
+
+            settings.InspectorFactory = new InspectorFactory(settings);
 
             return settings;
         }

@@ -3,6 +3,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using LogProxy.Lib.Inspection;
+using LogProxy.Lib.Inspection.Implementation;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace LogProxy.Lib.Tests.Unit

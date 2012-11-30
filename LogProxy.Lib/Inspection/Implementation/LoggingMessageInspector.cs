@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
-using LogProxy.Lib;
-using LogProxy.Lib.Inspection;
 
 namespace LogProxy.Lib.Inspection.Implementation
 {
@@ -12,7 +9,6 @@ namespace LogProxy.Lib.Inspection.Implementation
         private const string LoggerDateFormat = "yyyy-MM-dd-HH-mm-ss-fffffff";
 
         private ProxySettings settings;
-        private Stopwatch watch;
         private FileStream requestLogger;
         private FileStream responseLogger;
         private string fileNamePrefix;
@@ -22,16 +18,22 @@ namespace LogProxy.Lib.Inspection.Implementation
             this.settings = settings;
         }
 
-        public void ClientReceiveStart()
-        {
-        }
-
         public void AddRequestData(byte[] data)
         {
+            if (this.settings.LogMessageBody)
+            {
+                this.EnsureRequestLogger();
+                LogData(this.requestLogger, data);
+            }
         }
 
         public void AddResponseData(byte[] data)
         {
+            if (this.settings.LogMessageBody)
+            {
+                this.EnsureResponseLogger();
+                LogData(this.responseLogger, data);
+            }
         }
 
         public void RequestHeadersParsed(Lib.Http.HttpHeadersSummary headers)
@@ -46,30 +48,23 @@ namespace LogProxy.Lib.Inspection.Implementation
         {
         }
 
-        private void InitLoggers()
+        private void EnsureFileNamePrefix()
         {
-            string now = DateTime.Now.ToString(LoggerDateFormat, CultureInfo.InvariantCulture);
-            string guid = Guid.NewGuid().ToString();
-
-            this.fileNamePrefix = now + "-" + guid;
-
-            if (this.watch == null)
+            if (this.fileNamePrefix == null)
             {
-                this.watch = Stopwatch.StartNew();
-                this.RequestStartTime = DateTime.Now;
-                if (this.settings.LogMessageBody)
-                {
-                    this.InitLoggers();
-                }
+                string now = DateTime.Now.ToString(LoggerDateFormat, CultureInfo.InvariantCulture);
+                string guid = Guid.NewGuid().ToString();
+
+                this.fileNamePrefix = now + "-" + guid;
             }
         }
 
-        public DateTime RequestStartTime { get; private set; }
-
         private void EnsureRequestLogger()
         {
-            if (this.settings.LogMessageBody && this.requestLogger == null)
+            if (this.requestLogger == null && this.settings.LogMessageBody)
             {
+                this.EnsureFileNamePrefix();
+
                 string folder = this.settings.MessageBodyLogDirectory;
                 string requestFileName = this.fileNamePrefix + "-request.txt";
                 this.requestLogger = new FileStream(Path.Combine(folder, requestFileName), FileMode.CreateNew, FileAccess.Write, FileShare.Read, 1024 * 20);
@@ -78,8 +73,10 @@ namespace LogProxy.Lib.Inspection.Implementation
 
         private void EnsureResponseLogger()
         {
-            if (this.settings.LogMessageBody && this.responseLogger == null)
+            if (this.responseLogger == null && this.settings.LogMessageBody)
             {
+                this.EnsureFileNamePrefix();
+
                 string folder = this.settings.MessageBodyLogDirectory;
                 string responseFileName = this.fileNamePrefix + "-response.txt";
                 this.responseLogger = new FileStream(Path.Combine(folder, responseFileName), FileMode.CreateNew, FileAccess.Write, FileShare.Read, 1024 * 20);
@@ -93,63 +90,9 @@ namespace LogProxy.Lib.Inspection.Implementation
                 try
                 {
                     logger.Write(data, 0, data.Length);
-                    logger.Flush();
                 }
                 catch (ObjectDisposedException)
                 { }
-            }
-        }
-
-        public string SoapAction
-        {
-            get
-            {
-                if (this.soapAction != null)
-                {
-                    return this.soapAction;
-                }
-
-                if (this.soapActionSearchBuffer != null)
-                {
-                    this.soapActionSearchBuffer.Wait();
-                    return this.soapActionSearchBuffer.SoapAction;
-                }
-
-                return null;
-            }
-        }
-
-        private string soapAction;
-        private SoapActionSearchBuffer soapActionSearchBuffer;
-
-        public void AddContent(byte[] content)
-        {
-            if (string.IsNullOrEmpty(this.soapAction))
-            {
-                this.EnsureSoapActionBuffer(null);
-                this.soapActionSearchBuffer.AddContent(content, 0, content.Length);
-            }
-        }
-
-        private void EnsureSoapActionBuffer(byte[] bufferData)
-        {
-            if (this.soapActionSearchBuffer == null)
-            {
-                this.soapActionSearchBuffer = new SoapActionSearchBuffer();
-                if (bufferData != null)
-                {
-                    this.soapActionSearchBuffer.AddContent(bufferData, 0, bufferData.Length);
-                }
-
-                this.soapActionSearchBuffer.StartSearch();
-            }
-        }
-
-        public void Finish()
-        {
-            if (this.soapActionSearchBuffer != null)
-            {
-                this.soapActionSearchBuffer.FinishContentTransfer();
             }
         }
 

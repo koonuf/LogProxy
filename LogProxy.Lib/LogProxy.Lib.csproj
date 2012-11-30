@@ -42,8 +42,10 @@
   <ItemGroup>
     <Compile Include="Http\ChunkSearchBuffer.cs" />
     <Compile Include="Http\HeaderSearchBufferType.cs" />
+    <Compile Include="Inspection\Implementation\AggregateHttpMessageInspector.cs" />
+    <Compile Include="Inspection\Implementation\InspectorFactory.cs" />
     <Compile Include="Inspection\Implementation\LoggingMessageInspector.cs" />
-    <Compile Include="Inspection\SoapActionSearchBuffer.cs" />
+    <Compile Include="Inspection\Implementation\SoapActionSearchBuffer.cs" />
     <Compile Include="Streams\BlockingMemoryStream.cs" />
     <Compile Include="DnsCacheReader.cs" />
     <Compile Include="Sockets\HostConnector.cs" />
@@ -58,8 +60,8 @@
     <Compile Include="Streams\SocketStream.cs" />
     <Compile Include="Sockets\ClientWorker.cs" />
     <Compile Include="Http\HttpRequestInfo.cs" />
-    <Compile Include="Inspection\SoapCsvMessageLogger.cs" />
-    <Compile Include="Inspection\SoapCsvMessageLoggerFields.cs" />
+    <Compile Include="Inspection\Implementation\SoapCsvMessageLogger.cs" />
+    <Compile Include="Inspection\Implementation\SoapCsvMessageLoggerFields.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Http\HttpMessage.cs" />
     <Compile Include="ProxySettings.cs" />
