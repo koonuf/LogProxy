@@ -10,7 +10,7 @@ namespace LogProxy.Lib.Tests.Unit
     {
         [TestMethod]
         public void AddContentDataTest1()
-        {
+        { 
             var target = new ChunkSearchBuffer();
             var chunks = new List<string> 
             { 
